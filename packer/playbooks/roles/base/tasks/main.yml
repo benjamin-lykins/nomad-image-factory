@@ -1,0 +1,22 @@
+---
+- name: Debug ansible_os_family
+  debug:
+    msg: "ansible_os_family is {{ ansible_os_family }}"
+
+- name: Debug platform
+  debug:
+    msg: "platform is {{ platform }}"
+
+- name: Platform is vSphere
+  debug:
+    msg: "platform is {{ platform }}"
+  when: platform in ['vsphere-iso', 'vsphere-clone']
+
+- name: Platform is not vSphere
+  debug:
+    msg: "platform is {{ platform }}"
+  when: platform not in ['vsphere-iso', 'vsphere-clone']
+
+- name: "{{ base_task_name }} - {{ platform }}"
+  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ['Debian', 'RedHat']

@@ -1,0 +1,76 @@
+name: Build GitHub Actions Images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packer/builds/github-actions-images/**'
+  workflow_dispatch:
+    inputs:
+      singleBuild:
+        type: choice
+        description: image override
+        required: false
+        options:
+          - all
+          - listener
+          - builder
+env:
+  DEFAULT_IMAGES: listener, builder
+  BUILDPATH: packer/builds
+  LAYER : github-actions-images
+
+  #HCP Environment Variables
+  HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID}}
+  HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET}}
+  HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID}}
+
+  # GitHub Container Registry Environment Variables
+  REGISTRY_USERNAME : benjamin-lykins
+  REGISTRY_TOKEN : ${{ secrets.REGISTRY_TOKEN }}
+
+    
+jobs:
+  selectimages:
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: get-images
+        id: get-images
+        run: |
+          if [[ "${{ inputs.singleBuild }}" != "all" ]] && [[ -n "${{ github.event.inputs.singleBuild }}" ]] ; then
+            export IMAGES=$(echo ${{ inputs.singleBuild }} | jq -R '["\(.)"]')
+            echo "images_out"=$IMAGES""
+            echo "images_out"=$IMAGES"" >> $GITHUB_OUTPUT
+          else
+            export IMAGES=$(echo $DEFAULT_IMAGES | jq -R 'split(", ")')
+            echo "images_out"=$IMAGES""
+            echo "images_out"=$IMAGES"" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      images: ${{ steps.get-images.outputs.images_out }}
+
+  build:
+    runs-on: "ubuntu-latest"
+    needs: [selectimages]
+    strategy:
+      matrix:
+        image: ${{fromJson(needs.selectimages.outputs.images)}}
+    steps:
+      - uses: FraBle/clean-after-action@v1
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: latest
+      
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
+      - name: Image Builder
+        run: |
+          packer init -force  ${BUILDPATH}/${LAYER}/${{matrix.image}}/.
+          packer build -force \
+          -var 'additional_tags=["${{github.sha}}", "${{github.run_id}}", "${{github.ref_name}}"]' \
+          ${BUILDPATH}/${LAYER}/${{matrix.image}}/.

@@ -1,0 +1,35 @@
+- name: Install required system packages
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - python3-setuptools
+    state: latest
+    update_cache: true
+
+- name: Add Docker APT repository
+  deb822_repository:
+    name: docker
+    state: present
+    types: [deb]
+    uris: "https://download.docker.com/linux/{{ ansible_distribution|lower }}"
+    suites: ["{{ ansible_distribution_release|lower }}"]
+    components: [stable]
+    signed_by: "https://download.docker.com/linux/debian/gpg"
+    enabled: yes
+
+- name: Update apt and install docker-ce
+  apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+
+- name: Ensure Docker service is running
+  systemd_service:
+    name: docker
+    state: started
+    enabled: yes

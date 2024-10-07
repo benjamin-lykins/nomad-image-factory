@@ -1,0 +1,99 @@
+name: Build Nomad Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        description: platform override
+        required: false
+        options:
+          - all
+          - vsphere
+          - aws
+          - azure
+  # workflow_run:
+  #   types:
+  #     - completed
+  #   workflows:
+  #     - "Build App Images"
+
+env:
+  DEFAULT_PLATFORMS: aws, azure, vsphere
+  LAYER : app-images
+  BUILDPATH: packer/builds/image-factory
+
+  #Datadog Environment Variables
+  DD_API_KEY: ${{ secrets.DD_API_KEY }}
+
+  #HCP Environment Variables
+  HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID}}
+  HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET}}
+  HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID}}
+  
+
+  #vSphere Environment Variables
+  VSPHERE_SERVER  : ${{ secrets.VSPHERE_SERVER }}
+  VSPHERE_USER: ${{ secrets.VSPHERE_USER }}
+  VSPHERE_PASSWORD: ${{ secrets.VSPHERE_PASSWORD }}
+
+  #AWS Environment Variables
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-2
+
+  #Azure Environment Variables
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+       
+jobs:
+  selectimages:
+    runs-on: "ubuntu-latest"
+    # if: ${{ (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.conclusion != 'cancelled') || github.event_name == 'workflow_dispatch' }}
+    steps:
+      - name: get-images
+        id: get-images
+        run: |
+          if [[ "${{ inputs.platform }}" != "all" ]] && [[ -n "${{ github.event.inputs.platform }}" ]] ; then
+            export PLATFORMS=$(echo ${{ inputs.platform }} | jq -R '["\(.)"]')
+            echo "platforms_out"=$PLATFORMS""
+            echo "platforms_out"=$PLATFORMS"" >> $GITHUB_OUTPUT
+          else
+            export PLATFORMS=$(echo $DEFAULT_PLATFORMS | jq -R 'split(", ")')
+            echo "platforms_out"=$PLATFORMS""
+            echo "platforms_out"=$PLATFORMS"" >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      platforms: ${{ steps.get-images.outputs.platforms_out }}
+
+  build:
+    runs-on: ["${{matrix.platform}}"]
+    needs: [selectimages]
+    env: 
+      HCP_PACKER_BUCKET: ${{matrix.platform}}-${{matrix.image}}
+      PLATFORM: ${{matrix.platform}}
+      NOMAD_ROLE: ${{matrix.image}}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["nomad-client", "nomad-server", "nomad-shared"]
+        platform: ${{fromJson(needs.selectimages.outputs.platforms)}}
+    steps:
+      - uses: FraBle/clean-after-action@v1
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: latest
+      
+      - name: Checkout code
+        uses: actions/checkout@v4.1.1
+
+      - name: Image Builder
+        run: |     
+        
+          packer init -force -var-file=${BUILDPATH}/${LAYER}/nomad/variables/example.pkrvars.hcl ${BUILDPATH}/${LAYER}/nomad/.
+          packer build -force -var-file=${BUILDPATH}/${LAYER}/nomad/variables/example.pkrvars.hcl ${BUILDPATH}/${LAYER}/nomad/.

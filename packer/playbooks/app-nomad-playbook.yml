@@ -1,0 +1,13 @@
+---
+- name: Playbook for Nomad Servers
+  become: true
+  become_method: ansible.builtin.sudo
+  debugger: never
+  gather_facts: true
+  hosts: all
+  vars:
+    nomad_version: "1.8.4"
+    enable_cloudinit: true
+  roles:
+    - nomad
+    - clean

@@ -1,0 +1,12 @@
+---
+- name: Playbook for Docker Servers
+  become: true
+  become_method: ansible.builtin.sudo
+  debugger: never
+  gather_facts: true
+  hosts: all
+  vars:
+    enable_cloudinit: true
+  roles:
+    - docker
+    - clean
