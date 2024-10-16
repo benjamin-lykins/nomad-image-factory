@@ -17,14 +17,14 @@ All of my Packer builds are in the packer directory. All of my builds are in the
         - listener
             - This is a unique image which listens to requests from GitHub actions and creates a unique Nomad job just for that run. 
 - image-factory
-    - There is base-images and app-images. 
+    - There are base-images and app-images. 
         - Base images are built directly from the ISO and are general use. 
             - Ubuntu 24
             - RHEL 9
-            - WIndows 2025
+            - WIndows 202x
         - App images are a bit more specialized. 
             - Linux Docker Image
-                - Nomad Images Built from the Linux Docker Images.
+                - Nomad Images are from the Linux Docker Images.
             - Linux Nginx Image
             - Windows IIS Image
 
