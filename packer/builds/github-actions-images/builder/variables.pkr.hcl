@@ -1,16 +1,7 @@
 variable "runner_version" {
   type    = string
   default = "2.319.1"
-}
-
-variable "runner_os" {
-  type    = string
-  default = "linux"
-}
-
-variable "runner_arch" {
-  type    = string
-  default = "x64"
+  description = "The version of the GitHub Actions Runner to build."
 }
 
 variable "registry_username" {

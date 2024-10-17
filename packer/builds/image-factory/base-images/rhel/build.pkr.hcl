@@ -1,6 +1,3 @@
-//  BLOCK: build
-//  Defines the builders to run, provisioners, and post-processors.
-
 variable "platform" {
   type        = string
   description = "The list of sources to build."

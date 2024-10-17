@@ -29,7 +29,7 @@ on:
 env:
   DEFAULT_IMAGES: docker, nginx
   DEFAULT_PLATFORMS: aws, azure, vsphere
-  LAYER : app-images
+  LAYER: app-images
   BUILDPATH: packer/builds/image-factory
 
   #Datadog Environment Variables
@@ -39,10 +39,9 @@ env:
   HCP_CLIENT_ID: ${{ secrets.HCP_CLIENT_ID}}
   HCP_CLIENT_SECRET: ${{ secrets.HCP_CLIENT_SECRET}}
   HCP_PROJECT_ID: ${{ secrets.HCP_PROJECT_ID}}
-  
 
   #vSphere Environment Variables
-  VSPHERE_SERVER  : ${{ secrets.VSPHERE_SERVER }}
+  VSPHERE_SERVER: ${{ secrets.VSPHERE_SERVER }}
   VSPHERE_USER: ${{ secrets.VSPHERE_USER }}
   VSPHERE_PASSWORD: ${{ secrets.VSPHERE_PASSWORD }}
 
@@ -56,7 +55,7 @@ env:
   ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
   ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-    
+
 jobs:
   selectimages:
     runs-on: "ubuntu-latest"
@@ -64,7 +63,7 @@ jobs:
     steps:
       - name: get-images
         id: get-images
-        run: |          
+        run: |
           if [[ "${{ inputs.singleBuild }}" != "all" ]] && [[ -n "${{ github.event.inputs.singleBuild }}" ]] ; then
             export IMAGES=$(echo ${{ inputs.singleBuild }} | jq -R '["\(.)"]')
             echo "images_out"=$IMAGES""
@@ -91,7 +90,7 @@ jobs:
   build:
     runs-on: ["${{matrix.platform}}"]
     needs: [selectimages]
-    env: 
+    env:
       HCP_PACKER_BUCKET: ${{matrix.platform}}-${{matrix.image}}
       PLATFORM: ${{matrix.platform}}
     strategy:
@@ -107,13 +106,13 @@ jobs:
         id: setup
         with:
           version: latest
-      
+
       - name: Checkout code
         uses: actions/checkout@v4.1.1
 
       - name: Image Builder
         run: |
-        
+
           packer init -force -var-file=${BUILDPATH}/${LAYER}/${{matrix.image}}/variables/example.pkrvars.hcl ${BUILDPATH}/${LAYER}/${{matrix.image}}/.
 
           packer build -force -var-file=${BUILDPATH}/${LAYER}/${{matrix.image}}/variables/example.pkrvars.hcl ${BUILDPATH}/${LAYER}/${{matrix.image}}/.
