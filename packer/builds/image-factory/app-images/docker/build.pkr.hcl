@@ -15,7 +15,6 @@ locals {
 
 build {
   sources = local.build_source
-
   provisioner "ansible" {
     user                   = var.build_username
     // galaxy_file            = "${path.cwd}/packer/playbooks/linux-requirements.yml"

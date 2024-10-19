@@ -4,6 +4,8 @@ build {
     "source.docker.actions-runner-builder"
   ]
 
+  # Will clean this up so it can be toggled by a variable. 
+
   //     hcp_packer_registry {
   //     bucket_name = "actions-runner-builder"
   //     description = <<EOT
@@ -31,8 +33,6 @@ build {
   provisioner "shell" {
     environment_vars = [
       "RUNNER_VERSION=${var.runner_version}",
-      "RUNNER_ARCH=${var.runner_arch}",
-      "RUNNER_OS=${var.runner_os}",
       "DEBIAN_FRONTEND=noninteractive",
     ]
     script = "packer/builds/github-actions-images/builder/scripts/install.sh"
