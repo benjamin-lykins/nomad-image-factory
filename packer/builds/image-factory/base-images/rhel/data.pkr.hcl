@@ -15,7 +15,6 @@ locals {
     datastore       = "[${var.common_iso_datastore}] ${var.iso_datastore_path}/${var.iso_file}"
   }
 
-
   data_source_content = {
     "/ks.cfg" = templatefile("${abspath(path.root)}/data/ks.pkrtpl.hcl", {
       build_username           = var.build_username
